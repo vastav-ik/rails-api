@@ -1,12 +1,13 @@
 default: &default
   adapter: postgresql
   encoding: unicode
+  host: 127.0.0.1
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
 development:
   <<: *default
   database: rails_api_development
-  host: localhost
+  host: 127.0.0.1
   username: <%= ENV.fetch("DB_USERNAME") { "postgres" } %>
   password: <%= ENV.fetch("DB_PASSWORD") { "password" } %>
 

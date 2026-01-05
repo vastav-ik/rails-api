@@ -1,36 +1,47 @@
-import json
-import re
+import os
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Agent:
     def __init__(self):
-        pass
+        api_key = os.getenv("GEMINI_API_KEY")
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def analyze(self, question: str):
         question = question.lower()
-        
-        if "inventory" in question or "stock" in question or "reorder" in question:
+        if any(word in question for word in ["inventory", "stock", "reorder", "product"]):
             intent = "inventory_optimization"
-            shopify_ql = "FROM inventory_items SHOW id, sku, inventory_levels LIMIT 5"
-        elif "sales" in question or "selling" in question:
+        elif any(word in question for word in ["sales", "selling", "revenue", "order"]):
             intent = "sales_analytics"
-            shopify_ql = "FROM orders SHOW id, total_price, line_items SINCE -30d"
-        elif "customer" in question:
-            intent = "customer_segmentation"
-            shopify_ql = "FROM customers SHOW id, orders_count, total_spent"
         else:
             intent = "general_inquiry"
-            shopify_ql = ""
-            
-        return {
-            "intent": intent,
-            "shopify_ql": shopify_ql,
-            "explanation_prompt": f"Explain {intent} based on the data."
-        }
+        return {"intent": intent}
     
     def explain(self, question: str, data: any, plan: dict):
-        if not data:
-            return "I couldn't find any relevant data."
+        if not data or (isinstance(data, dict) and "error" in data):
+            return "I couldn't find any data to analyze."
+
+        try:
+            prompt = (
+                f"As a Shopify business assistant, answer the user's question: '{question}' "
+                f"using this data: {data}. Give a specific recommendation in 3 sentences."
+            )
             
-        return f"Based on your request regarding {plan['intent']}, here is what I found. (Mock Data Summary: {len(str(data))} bytes)"
+            response = self.model.generate_content(prompt)
+            
+            if response and response.text:
+                return response.text
+            else:
+                return "The AI retrieved the data but provided an empty response."
+                
+        except Exception as e:
+            if "API key not valid" in str(e):
+                return "Error: Your Gemini API Key is invalid. Please check your .env file."
+            
+            print(f"ERROR: {e}")
+            return f"I have the data: {data}. (AI Insight unavailable: {str(e)})"
 
 agent_instance = Agent()

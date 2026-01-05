@@ -1,4 +1,3 @@
-
 require 'faraday'
 
 class AiAgentService
@@ -9,11 +8,15 @@ class AiAgentService
   end
 
   def ask(question)
+    shop = Shop.find_by(shopify_domain: @store_id)
+    access_token = shop&.shopify_token
+
     response = conn.post('/api/v1/analyze') do |req|
       req.headers['Content-Type'] = 'application/json'
       req.body = {
         store_id: @store_id,
-        question: question
+        question: question,
+        access_token: access_token
       }.to_json
     end
 

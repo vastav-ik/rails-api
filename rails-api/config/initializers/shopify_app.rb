@@ -12,6 +12,4 @@ ShopifyApp.configure do |config|
   config.log_level = :info
   config.reauth_on_access_scope_changes = true
   
-  # Since we are an API only app for this demo, generic auth handling
-  # In production you'd use a database for session storage
 end
